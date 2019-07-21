@@ -51,8 +51,12 @@ wwv_flow_api.create_plugin(
 '    max_zoom varchar2(100) := nvl(p_region.attribute_05, ''18'');',
 '    source varchar2(4000) := nvl(p_region.attribute_02, ''select marker_options as src_marker_options, marker_id as src_marker_id, ovl_layers as src_ovl_layers, marker_type as src_marker_type, lat as src_lat, lng as src_lng, loc as src_loc, label as s'
 ||'rc_label from src_table'');',
-'    tile_server varchar(200) :=nvl(p_region.attribute_06, ''https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'');',
-'    attribution varchar(400) := nvl(p_region.attribute_07, ''&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'');',
+'    tile_server varchar2(200) :=nvl(p_region.attribute_06, ''https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'');',
+'    attribution varchar2(400) := nvl(p_region.attribute_07, ''&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'');',
+'    layer_group varchar2(10) := nvl(p_region.attribute_08, ''Y'');',
+'    positioning varchar2(10) := nvl(p_region.attribute_09, ''Y'');    ',
+'    map_id varchar2(200) := nvl(p_region.attribute_10, '''');    ',
+'    access_token varchar2(400) := nvl(p_region.attribute_11, '''');',
 '    ',
 '    -- variables',
 '    map_data_ovl_layers apex_plugin_util.t_column_value_list;',
@@ -97,74 +101,90 @@ wwv_flow_api.create_plugin(
 '        p_max_rows         => NULL',
 '    );',
 '',
-'	htp.p(''<div id="mapid" style="width: 100%; height: ''||height||'';"></div>',
-'		<script>',
-'			function renderMap() {',
-'				var map = L.map("mapid").setView([''||center||''], ''||zoom||'');',
-'				L.tileLayer("''||tile_server||''", {',
-'					attribution: ''||attribution||'',',
-'					maxZoom: ''||max_zoom||'',',
-'					layers: [''||map_data_ovl_layers(1)(1)||'']',
-'				}).addTo(map);',
-'    '');        ',
+'    IF map_id is not null AND access_token is not null then',
+'        htp.p(''<div id="mapid" style="width: 100%; height: ''||height||'';"></div>',
+'            <script>',
+'                function renderMap() {',
+'                    var map = L.map("mapid").setView([''||center||''], ''||zoom||'');',
+'                    L.tileLayer(''''''||tile_server||''?access_token={accessToken}'''', {',
+'                        attribution: ''''''||attribution||'''''',',
+'                        maxZoom: ''||max_zoom||'',',
+'                        id: ''''''||map_id||'''''',',
+'                        accessToken: ''''''||access_token||'''''','');',
+'    ELSE',
+'        htp.p(''<div id="mapid" style="width: 100%; height: ''||height||'';"></div>',
+'            <script>',
+'                function renderMap() {',
+'                    var map = L.map("mapid").setView([''||center||''], ''||zoom||'');',
+'                    L.tileLayer(''''''||tile_server||'''''', {',
+'                        attribution: ''''''||attribution||'''''',',
+'                        maxZoom: ''||max_zoom||'','');',
+'    end if;',
+'                    ',
+'    IF layer_group = ''Y'' THEN                ',
+'        htp.p(''					    layers: [''||map_data_ovl_layers(1)(1)||'']',
+'                    }).addTo(map);',
+'        '');  ',
 '',
-'    FOR x in 1 .. map_data_marker(1).count LOOP        ',
-'        IF map_data_marker(5)(x) = ''marker'' THEN',
-'		    htp.p(''               var ''||replace(map_data_marker(1)(x), ''-'', ''_'')||'' = L.''||map_data_marker(5)(x)||''([''||replace(map_data_marker(2)(x), '','', ''.'')||'', ''||replace(map_data_marker(3)(x), '','', ''.'')||'']).addTo(map).bindPopup("''||map_data_marker('
-||'4)(x)||''").bindTooltip("''||map_data_marker(1)(x)||''");'');',
-'        ELSIF map_data_marker(5)(x) = ''circle'' THEN',
-'		    htp.p(''               var ''||replace(map_data_marker(1)(x), ''-'', ''_'')||'' = L.''||map_data_marker(5)(x)||''([''||replace(map_data_marker(2)(x), '','', ''.'')||'', ''||replace(map_data_marker(3)(x), '','', ''.'')||''], {''||map_data_marker(6)(x)||''}).addTo(map)'
-||'.bindPopup("''||map_data_marker(4)(x)||''").bindTooltip("''||map_data_marker(1)(x)||''");'');        ',
-'        ELSIF map_data_marker(5)(x) = ''polygon'' THEN',
-'		    htp.p(''               var ''||replace(map_data_marker(1)(x), ''-'', ''_'')||'' = L.''||map_data_marker(5)(x)||''([''||map_data_marker(7)(x)||'']).addTo(map).bindPopup("''||map_data_marker(4)(x)||''").bindTooltip("''||map_data_marker(1)(x)||''");'');',
-'        end if;',
-'    end loop;',
-'',
-'    FOR x in 1 .. map_data_ovl_layers_var(1).count LOOP',
-'        map_data_marker_var := APEX_PLUGIN_UTIL.GET_DATA (    ',
-'            p_sql_statement    => ''select src_marker_id, src_lat, src_lng, src_label, src_marker_type, src_marker_options, src_loc from (''||source||'') where src_ovl_layers like ''''%''||initcap(map_data_ovl_layers_var(1)(x))||''%'''''',',
-'            p_min_columns      => 7,',
-'            p_max_columns      => 7,',
-'            p_component_name   => p_region.name,',
-'            p_search_type      => NULL,',
-'            p_search_column_no => NULL,',
-'            p_search_string    => NULL,',
-'            p_first_row        => NULL,',
-'            p_max_rows         => NULL',
-'        );',
-'        htp.p(''',
-'              var ''||map_data_ovl_layers_var(1)(x)||'' = L.layerGroup(['');',
-'      FOR y in 1 .. map_data_marker_var(1).count ',
-'        LOOP',
-'            htp.p(''                      ''||replace(map_data_marker_var(1)(y), ''-'', ''_'')||'', '');',
+'        FOR x in 1 .. map_data_marker(1).count LOOP        ',
+'            IF map_data_marker(5)(x) = ''marker'' THEN',
+'                htp.p(''                var ''||replace(map_data_marker(1)(x), ''-'', ''_'')||'' = L.''||map_data_marker(5)(x)||''([''||replace(map_data_marker(2)(x), '','', ''.'')||'', ''||replace(map_data_marker(3)(x), '','', ''.'')||'']).addTo(map).bindPopup("''||map_d'
+||'ata_marker(4)(x)||''").bindTooltip("''||map_data_marker(1)(x)||''");'');',
+'            ELSIF map_data_marker(5)(x) = ''circle'' THEN',
+'                htp.p(''                var ''||replace(map_data_marker(1)(x), ''-'', ''_'')||'' = L.''||map_data_marker(5)(x)||''([''||replace(map_data_marker(2)(x), '','', ''.'')||'', ''||replace(map_data_marker(3)(x), '','', ''.'')||''], {''||map_data_marker(6)(x)||''})'
+||'.addTo(map).bindPopup("''||map_data_marker(4)(x)||''").bindTooltip("''||map_data_marker(1)(x)||''");'');        ',
+'            ELSIF map_data_marker(5)(x) = ''polygon'' THEN',
+'                htp.p(''                var ''||replace(map_data_marker(1)(x), ''-'', ''_'')||'' = L.''||map_data_marker(5)(x)||''([''||map_data_marker(7)(x)||'']).addTo(map).bindPopup("''||map_data_marker(4)(x)||''").bindTooltip("''||map_data_marker(1)(x)||''");'')'
+||';',
+'            end if;',
 '        end loop;',
-'        htp.p(''               ]);'');',
-'    end loop;',
-'              ',
-'    htp.p(''',
-'               var overlayMaps = {'');',
-'    ',
-'    FOR x in 1 .. map_data_ovl_layers_var(1).count LOOP',
-'        htp.p(''                  "''||INITCAP(map_data_ovl_layers_var(1)(x))||''": ''||map_data_ovl_layers_var(1)(x)||'','');',
-'    end loop;',
 '',
-'    htp.p(''               };',
-'       ',
+'        FOR x in 1 .. map_data_ovl_layers_var(1).count LOOP',
+'            map_data_marker_var := APEX_PLUGIN_UTIL.GET_DATA (    ',
+'                p_sql_statement    => ''select src_marker_id, src_lat, src_lng, src_label, src_marker_type, src_marker_options, src_loc from (''||source||'') where src_ovl_layers like ''''%''||initcap(map_data_ovl_layers_var(1)(x))||''%'''''',',
+'                p_min_columns      => 7,',
+'                p_max_columns      => 7,',
+'                p_component_name   => p_region.name,',
+'                p_search_type      => NULL,',
+'                p_search_column_no => NULL,',
+'                p_search_string    => NULL,',
+'                p_first_row        => NULL,',
+'                p_max_rows         => NULL',
+'            );',
+'            htp.p(''',
+'                var ''||map_data_ovl_layers_var(1)(x)||'' = L.layerGroup(['');',
+'          FOR y in 1 .. map_data_marker_var(1).count ',
+'            LOOP',
+'                htp.p(''                      ''||replace(map_data_marker_var(1)(y), ''-'', ''_'')||'', '');',
+'            end loop;',
+'            htp.p(''               ]);'');',
+'        end loop;',
+'',
+'        htp.p(''',
+'                var overlayMaps = {'');',
+'',
+'        FOR x in 1 .. map_data_ovl_layers_var(1).count LOOP',
+'            htp.p(''                  "''||INITCAP(map_data_ovl_layers_var(1)(x))||''": ''||map_data_ovl_layers_var(1)(x)||'','');',
+'        end loop;',
+'',
+'        htp.p(''                };',
+'              ',
 '                L.control.layers('''''''', overlayMaps).addTo(map);',
-'          ',
-'                map.addControl(L.control.locate({',
-'                	locateOptions: {',
-'                    	enableHighAccuracy: true',
-'                	}}));}',
-'		</script>'');    ',
-'--    htp.p(''',
-'--              }',
-'--          ',
-'--          function onMapClick(i) {',
-'--                 L.popup().setLatLng(i.latlng).setContent(''''You clicked the map at '''' + i.latlng.toString()).openOn(map);',
-'--              }',
-'--          </script>',
-'--    '');',
+'        '');    ',
+'    ',
+'    ELSE',
+'        htp.p(''                }).addTo(map);',
+'        '');     ',
+'    end if;',
+'    ',
+'    IF positioning = ''Y'' THEN',
+'    htp.p(''                map.addControl(L.control.locate({',
+'                    locateOptions: {',
+'                        enableHighAccuracy: true',
+'                }}));'');        ',
+'    end if;',
+'    htp.p(''            }',
+'        </script>'');   ',
 '',
 '    apex_javascript.add_onload_code(''renderMap()'');',
 '    return null;',
@@ -203,10 +223,12 @@ wwv_flow_api.create_plugin_attribute(
 ,p_attribute_type=>'SQL'
 ,p_is_required=>true
 ,p_default_value=>wwv_flow_string.join(wwv_flow_t_varchar2(
-'-- marker_options: color: ''red'', fillColor: ''#f03'', fillOpacity: 0.5, radius: 500',
+'-- marker_options: [VALUE] - color: ''red'', fillColor: ''#f03'', fillOpacity: 0.5, radius: 500',
 '-- marker_id: unique marker id',
 '-- ovl_layers: for layer groups',
 '-- marker_type: [VALUE] - marker, circle or polygon',
+'-- lat and lng for marker and circle',
+'-- loc for polygons: [VALUE] - [lat, lng], [lat, lng], [lat, lng]',
 '',
 'select',
 '	marker_options as src_marker_options,',
@@ -265,7 +287,7 @@ wwv_flow_api.create_plugin_attribute(
 ,p_display_sequence=>60
 ,p_prompt=>'Tile Server'
 ,p_attribute_type=>'TEXT'
-,p_is_required=>false
+,p_is_required=>true
 ,p_default_value=>'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 ,p_max_length=>200
 ,p_is_translatable=>false
@@ -278,8 +300,56 @@ wwv_flow_api.create_plugin_attribute(
 ,p_display_sequence=>70
 ,p_prompt=>'Attribution'
 ,p_attribute_type=>'TEXT'
+,p_is_required=>true
+,p_default_value=>'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+,p_max_length=>400
+,p_is_translatable=>false
+);
+wwv_flow_api.create_plugin_attribute(
+ p_id=>wwv_flow_api.id(2991459621411683)
+,p_plugin_id=>wwv_flow_api.id(1977343055513226)
+,p_attribute_scope=>'COMPONENT'
+,p_attribute_sequence=>8
+,p_display_sequence=>80
+,p_prompt=>'Layer_Group'
+,p_attribute_type=>'CHECKBOX'
 ,p_is_required=>false
-,p_default_value=>'''&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'''
+,p_default_value=>'Y'
+,p_is_translatable=>false
+);
+wwv_flow_api.create_plugin_attribute(
+ p_id=>wwv_flow_api.id(3000337103448989)
+,p_plugin_id=>wwv_flow_api.id(1977343055513226)
+,p_attribute_scope=>'COMPONENT'
+,p_attribute_sequence=>9
+,p_display_sequence=>90
+,p_prompt=>'Positioning'
+,p_attribute_type=>'CHECKBOX'
+,p_is_required=>false
+,p_default_value=>'Y'
+,p_is_translatable=>false
+);
+wwv_flow_api.create_plugin_attribute(
+ p_id=>wwv_flow_api.id(3050327063751541)
+,p_plugin_id=>wwv_flow_api.id(1977343055513226)
+,p_attribute_scope=>'COMPONENT'
+,p_attribute_sequence=>10
+,p_display_sequence=>100
+,p_prompt=>'Map ID'
+,p_attribute_type=>'TEXT'
+,p_is_required=>false
+,p_max_length=>200
+,p_is_translatable=>false
+);
+wwv_flow_api.create_plugin_attribute(
+ p_id=>wwv_flow_api.id(3050927136753511)
+,p_plugin_id=>wwv_flow_api.id(1977343055513226)
+,p_attribute_scope=>'COMPONENT'
+,p_attribute_sequence=>11
+,p_display_sequence=>110
+,p_prompt=>'Access Token'
+,p_attribute_type=>'TEXT'
+,p_is_required=>false
 ,p_max_length=>400
 ,p_is_translatable=>false
 );
