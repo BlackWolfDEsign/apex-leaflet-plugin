@@ -19,10 +19,12 @@ supports layer group
 
 The `Source` attribute should contain a SQL statement like :
 ```
--- marker_options: color: 'red', fillColor: '#f03', fillOpacity: 0.5, radius: 500
+-- marker_options: [VALUE] - color: 'red', fillColor: '#f03', fillOpacity: 0.5, radius: 500
 -- marker_id: unique marker id
 -- ovl_layers: for layer groups
 -- marker_type: [VALUE] - marker, circle or polygon
+-- lat and lng for marker and circle
+-- loc for polygons: [VALUE] - [lat, lng], [lat, lng], [lat, lng]
 
 select
 	marker_options as src_marker_options,
