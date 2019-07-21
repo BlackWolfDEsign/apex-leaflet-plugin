@@ -16,6 +16,10 @@ supports layer group
 | Source      | SQL Code        | Yes      | _Described below_ |
 | Tile Server | Text            | Yes      | _Described below_ |
 | Attribution | Text            | Yes      | _Described below_ |
+| Layer Group | Yes/No          | Yes      | Yes	       |
+| Positioning | Yes/No          | Yes      | Yes	       |
+| Map ID      | Text            | Yes      | _Described below_ |
+| Access Token| Text            | Yes      | _Described below_ |
 
 The `Source` attribute should contain a SQL statement like :
 ```
@@ -48,6 +52,8 @@ The `Attribution` attribute should contain a string like :
 ```
 '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 ```
+
+The `Map ID` and `Access Token` attributes should contain a string for other tileserver
 
 ## used in plugin and thanks to the developers of:
 ```
