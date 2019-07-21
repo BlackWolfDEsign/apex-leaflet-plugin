@@ -6,11 +6,10 @@ supports positioning
 supports layer group
 ```
 
-# plugin config
+## plugin config
 | Name        | Type            | Required | Default Value     |
 |-------------|-----------------|----------|-------------------|
 | Height      | Text            | Yes      | 700px             |
-| Source      | SQL Code        | Yes      | _Described below_ |
 | Center      | Text            | Yes      | lat, lng          |
 | Zoom        | Text            | Yes      | 14                |
 | Max_Zoom    | Text            | Yes      | 18                |
@@ -48,8 +47,9 @@ The `Attribution` attribute should contain a string like :
 '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 ```
 
-# used in plugin and thanks to the developers of:
-## leaflet 1.5.1
-## fontawesome 5.9.0
-## leaflet-locatcontrol 0.67.0
-
+## used in plugin and thanks to the developers of:
+```
+leaflet 1.5.1
+fontawesome 5.9.0
+leaflet-locatcontrol 0.67.0
+```
