@@ -1,9 +1,12 @@
 # apex-leaflet-plugin 1.0.0
 a leaflet-plugin for oracle apex with some plugins
+## supports
 ```
-supports marker, circle and polygons
-supports positioning
-supports layer group
+marker, circle and polygons
+positioning (Where am I?)
+layer group
+mouse location
+map_id and access_token
 ```
 
 ## plugin config
@@ -12,7 +15,7 @@ supports layer group
 | Height      | Text            | Yes      | 700px             |
 | Center      | Text            | Yes      | lat, lng          |
 | Zoom        | Text            | Yes      | 14                |
-| Max_Zoom    | Text            | Yes      | 18                |
+| Max Zoom    | Text            | Yes      | 18                |
 | Source      | SQL Code        | Yes      | _Described below_ |
 | Tile Server | Text            | Yes      | _Described below_ |
 | Attribution | Text            | Yes      | _Described below_ |
@@ -20,6 +23,7 @@ supports layer group
 | Positioning | Yes/No          | Yes      | Yes	       |
 | Map ID      | Text            | Yes      | _Described below_ |
 | Access Token| Text            | Yes      | _Described below_ |
+| Mouse Loc   | Yes/No          | Yes      | Yes	       |
 
 The `Source` attribute should contain a SQL statement like :
 ```
